@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  teleton-api:
+    container_name: teleton-api
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/api/app
+      - TZ=America/Costa_Rica
+    restart: on-failure
+    # Descomentar si se quieren usar logs con volumes
+    #volumes:
+    #  - teleton-api-logs:/api/logs
+# Se podria crear un volume si se desean guardar los logs de la ruta /api/logs como asi:
+# volume para logs persistentes 
+#volumes:
+#  teleton-api-logs:

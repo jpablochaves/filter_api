@@ -1,0 +1,6 @@
+.settings.ini
+.venv
+.lvenv
+.idea
+.vscode
+logs
