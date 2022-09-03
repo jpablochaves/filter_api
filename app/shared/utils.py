@@ -154,6 +154,13 @@ def getLoggerLevel(currentConf:dict):
     
 
 def get_sha256str(input:str) -> str:
+    """
+    Obtener el hex digest sha256 a partir de un texto plano
+    Args:
+        input (str): Texto a convertir en str
+    Returns:
+        str: Texto en sha256
+    """
     return hashlib.sha256(input.encode('utf-8')).hexdigest()
 
 

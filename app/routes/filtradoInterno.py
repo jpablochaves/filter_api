@@ -4,11 +4,10 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import logging as logger
 from typing import List
 from app.models.models import Mensajes, Users, Diccionario
-from app.controllers.filtradoController import get_new_sms, get_new_sms_list, get_user, get_sms, approve_sms, reject_sms, add_dictionary
+from app.controllers.filtradoInternoController import get_new_sms_list,  get_new_sms, get_sms, approve_sms, reject_sms, add_dictionary
 from app.controllers.authController import authenticate_user
 
-
-filtradoApp = APIRouter()
+filtradoInternoApp = APIRouter()
 security = HTTPBasic()
 
 
@@ -23,14 +22,14 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     return credentials.username
 
 
-@filtradoApp.get('/')
+@filtradoInternoApp.get('/')
 def test_endpoint(request: Request):
     logger.info(f"Test endpoint from {request.client.host}")
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": f"OK from {request.client.host}"})
 
 
-@filtradoApp.get("/sms/")
-def get_sms(username: str = Depends(get_current_username), response_model=List[Mensajes], status_code=status.HTTP_200_OK):
+@filtradoInternoApp.get("/sms/")
+def getSMS(username: str = Depends(get_current_username), response_model=List[Mensajes], status_code=status.HTTP_200_OK):
     data = get_new_sms()
     if data is None:
         logger.error("ERROR|filtrado|data is None for message with status 0")
@@ -40,7 +39,7 @@ def get_sms(username: str = Depends(get_current_username), response_model=List[M
         return data
 
 
-@filtradoApp.get("/sms/list/")
+@filtradoInternoApp.get("/sms/list/")
 def get_all_unfiltered_sms(quantity: int = 10, username: str = Depends(get_current_username), response_model=List[Mensajes], status_code=status.HTTP_200_OK):
     # quantity puede enviarse como param: /v1/teleton/filtrado/sms/list/?quantity=5
     data = get_new_sms_list(quantity)
@@ -52,15 +51,7 @@ def get_all_unfiltered_sms(quantity: int = 10, username: str = Depends(get_curre
         return data
 
 
-@filtradoApp.get("/users/{username}")
-def get_current_user(username: str = Depends(get_current_username), response_model=List[Users], status_code=status.HTTP_200_OK):
-    user = username
-    logger.info(f"Getting info from {username}")
-    data = get_user(user)
-    return data
-
-
-@filtradoApp.put("/sms/approve/{sms_id}")
+@filtradoInternoApp.put("/sms/approve/{sms_id}")
 async def approveSMS(sms_id: int, username: str = Depends(get_current_username), response_model=List[Mensajes]):
     db_sms = get_sms(sms_id)
     if not db_sms:
@@ -71,7 +62,7 @@ async def approveSMS(sms_id: int, username: str = Depends(get_current_username),
         return JSONResponse(content=ret_data, status_code=status.HTTP_200_OK)
 
 
-@filtradoApp.put("/sms/reject/{sms_id}")
+@filtradoInternoApp.put("/sms/reject/{sms_id}")
 async def rejectSMS(sms_id: int, username: str = Depends(get_current_username), response_model=List[Mensajes]):
     db_sms = get_sms(sms_id)
     if not db_sms:
@@ -82,7 +73,7 @@ async def rejectSMS(sms_id: int, username: str = Depends(get_current_username), 
         return JSONResponse(content=ret_data, status_code=status.HTTP_200_OK)
 
 
-@filtradoApp.post("/sms/dictionary/")
+@filtradoInternoApp.post("/sms/dictionary/")
 async def addDictionary(datos_request: Diccionario, username: str = Depends(get_current_username)):
     ret_status = add_dictionary(datos_request)
     if ret_status == -1:

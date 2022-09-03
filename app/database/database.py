@@ -1,5 +1,5 @@
 import cx_Oracle
-from ..shared.utils import load_db_config
+from app.shared.utils import load_db_config
 import logging as logger
 
 
@@ -300,3 +300,151 @@ def add_to_dictionary(word:str, user:str) -> int:
             ret = -1
     return ret
 
+## -----------------------------------
+# Operaciones para el cintillo interno 
+## -----------------------------------
+def fetch_new_messages_internal(total_sms:int = 10) -> dict:
+    """
+    Obtener un listado de SMS en estado 0 (sin filtrar) para mostrarlos
+    en la aplicación de filtrado
+    Args:
+            total_sms (int,optional): Default es 10. Define la cantidad de SMS que se quieren obtener en estado 0
+    Returns:
+            dict: Diccionario con formato JSON de: {"id":000,"contenido":"","fecha_inclusion":"DD/MM/YYYY HH24:MI:SS"}
+    """
+    data = None
+    if db_pool is None:
+        logger.error("ERROR|DB|Pool is not established for fetch_new_messages")
+        return data
+    try:
+        connection = db_pool.acquire()
+        cursor = connection.cursor()
+        sql = "SELECT ID,CONTENIDO, TO_CHAR(FECHA_INCLUSION,'DD/MM/YYYY HH24:MI:SS') as FECHA_INCLUSION FROM SMSATLANTIS.MENSAJES_SIN_FILTRAR_INTERNO WHERE ESTADO = 0 AND ROWNUM <= :total_pag"
+        total_pag = total_sms
+        cursor.execute(sql, [total_pag])
+        cursor.rowfactory = lambda *args: dict(zip([d[0] for d in cursor.description], args))
+        data = cursor.fetchall()
+        db_pool.release(connection)
+    except (Exception, cx_Oracle.DatabaseError) as dberr:
+        logger.error(f"DB|ERROR|fetch_new_messages_interno()|Problem on SessionPool.acquire(), error_message: {dberr}")
+        data = None
+    finally:
+        sql = None
+        cursor = None
+        total_pag = None
+    return data
+
+def fetch_message_internal() -> dict:
+    """
+    Obtener un un SMS en estado 0 (sin filtrar) para mostrarlo en la aplicación de filtrado
+
+    Returns:
+            dict: Diccionario con formato JSON de: {"id":000,"contenido":"","fecha_inclusion":"DD/MM/YYYY HH24:MI:SS"}
+    """
+    data = None
+    if db_pool is None:
+        logger.error("ERROR|DB|Pool is not established for fetch_message")
+        return data
+    try:
+        connection = db_pool.acquire()
+        cursor = connection.cursor()
+        sql = "SELECT id,contenido,TO_CHAR(FECHA_INCLUSION,'DD/MM/YYYY HH24:MI:SS') as fecha_inclusion FROM SMSATLANTIS.MENSAJES_SIN_FILTRAR_INTERNO WHERE ESTADO = 0 AND ROWNUM = 1"
+        cursor.execute(sql)
+        cursor.rowfactory = lambda *args: dict(zip([d[0] for d in cursor.description], args))
+        data = cursor.fetchall()
+        db_pool.release(connection)
+    except (Exception, cx_Oracle.DatabaseError) as dberr:
+        logger.error(f"DB|ERROR|fetch_message_interno()|Problem on SessionPool.acquire(), error_message: {dberr}")
+        data = None
+    finally:
+        sql = None
+        cursor = None
+    return data
+
+def get_message_internal(id_sms:int) -> dict:
+    """
+    Obtener un un SMS en estado 0 (sin filtrar) para mostrarlo en la aplicación de filtrado
+    Args:
+        id_sms (int):  Id del SMS a buscar
+    Returns:
+            dict: Diccionario con formato JSON de: {"id":000,"contenido":"","fecha_inclusion":"DD/MM/YYYY HH24:MI:SS"}
+    """
+    data = None
+    if db_pool is None:
+        logger.error("ERROR|DB|Pool is not established for get_message")
+        return data
+    try:
+        connection = db_pool.acquire()
+        cursor = connection.cursor()
+        sql = "SELECT ID,CONTENIDO, TO_CHAR(FECHA_INCLUSION,'DD/MM/YYYY HH24:MI:SS') as FECHA_INCLUSION FROM SMSATLANTIS.MENSAJES_SIN_FILTRAR_INTERNO WHERE ID = :id_sms"
+        cursor.execute(sql, [id_sms])
+        cursor.rowfactory = lambda *args: dict(zip([d[0] for d in cursor.description], args))
+        data = cursor.fetchall()
+        db_pool.release(connection)
+    except (Exception, cx_Oracle.DatabaseError) as dberr:
+        logger.error(f"DB|ERROR|get_message_interno()|Problem on SessionPool.acquire(), error_message: {dberr}")
+        data = None
+    finally:
+        sql = None
+        cursor = None
+    return data
+
+def approve_sms_internal(id:int, user:str) -> bool:
+    """
+    Actualizar un mensaje a aprobado
+    Args:
+            id (int): id del sms que se desea aprobar
+            user (str): usuario que actualiza el mensaje
+    Returns:
+            bool: True si se actualizo, False si falló
+    """
+    ret = False
+    if db_pool is None:
+        logger.error("ERROR|DB|Pool is not established for approve_sms")
+        return ret
+    try:
+        connection = db_pool.acquire()
+        cursor = connection.cursor()
+        sql = "UPDATE SMSATLANTIS.MENSAJES_SIN_FILTRAR_INTERNO SET ESTADO = 2, USUARIO = :1 WHERE ID = :2"
+        cursor.execute(sql, (user,id))
+        connection.commit()
+        rows = cursor.rowcount
+        db_pool.release(connection)
+        if rows > 0:
+            ret = True
+        else:
+            ret = False
+    except (Exception, cx_Oracle.DatabaseError) as dberr:
+        logger.error(f"DB|ERROR|approve_sms_interno()|Problem on SessionPool.acquire(), error_message: {dberr}")
+        ret = False
+    return ret
+
+def reject_sms_internal(id:int, user:str) -> bool:
+    """
+    Actualizar un mensaje a rechazado
+    Args:
+            id (int): id del sms que se desea aprobar
+            user (str): usuario que actualiza el mensaje
+    Returns:
+            bool: True si se actualizo, False si falló
+    """
+    ret = False
+    if db_pool is None:
+        logger.error("ERROR|DB|Pool is not established for reject_sms")
+        return ret
+    try:
+        connection = db_pool.acquire()
+        cursor = connection.cursor()
+        sql = "UPDATE SMSATLANTIS.MENSAJES_SIN_FILTRAR_INTERNO SET ESTADO = 3, USUARIO = :1 WHERE ID = :2"
+        cursor.execute(sql, (user,id))
+        connection.commit()
+        rows = cursor.rowcount
+        db_pool.release(connection)
+        if rows > 0:
+            ret = True
+        else:
+            ret = False
+    except (Exception, cx_Oracle.DatabaseError) as dberr:
+        logger.error(f"DB|ERROR|reject_sms_interno()|Problem on SessionPool.acquire(), error_message: {dberr}")
+        ret = False
+    return ret
