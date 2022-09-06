@@ -10,8 +10,8 @@ from app.routes.filtradoInterno import filtradoInternoApp
 from app.database.database import start_dbpool, close_dbpool
 from app.shared.utils import load_db_config, isSettingsFileThere, isLogsDirectoryThere, get_logger_dictConfig, getLoggerLevel
 
-REST_URI = '/v1/teleton/filtrado'
-REST_URI_INTERNAL = '/v1/teleton/filtrado/interno'
+__REST_URI = '/v1/teleton/filtrado'
+__REST_URI_INTERNAL = f'{__REST_URI}/interno'
 
 app = FastAPI(title="FilterAPI", version=1.0)
 
@@ -56,8 +56,8 @@ def test_endpoint(request: Request):
 
 
 # incluir mis operaciones del URI /v1/teleton/filtrado que se encuentran en filtrado.py
-app.include_router(filtradoApp, prefix=REST_URI)
-app.include_router(filtradoInternoApp, prefix=REST_URI_INTERNAL)
+app.include_router(filtradoApp, prefix=__REST_URI)
+app.include_router(filtradoInternoApp, prefix=__REST_URI_INTERNAL)
 
 
 if __name__ == '__main__':
